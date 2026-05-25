@@ -382,6 +382,7 @@
     gap: 10px;
     flex-wrap: wrap;
     margin-top: 8px;
+    justify-content: center;
   }
 
   .btn-cal {
@@ -700,7 +701,7 @@
   // ============================================================
   // CONFIGURATION: paste your deployed Apps Script URL here
   // ============================================================
-  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyooAP8Ltp8lA5rCW1YTJ9zEWlY0oWkpPlvtfS4Rxsg7w0QmvcGFLWWJoRoOaQy9LFV/exec';
   // ============================================================
 
   // Build Google Calendar link
@@ -758,7 +759,7 @@
       going: going
     });
 
-    if (APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyooAP8Ltp8lA5rCW1YTJ9zEWlY0oWkpPlvtfS4Rxsg7w0QmvcGFLWWJoRoOaQy9LFV/exec') {
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
       // Demo mode: show confirmation without real submission
       showConfirmation(answer, names);
       return;
