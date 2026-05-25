@@ -97,18 +97,6 @@
     margin-bottom: 28px;
   }
 
-  .pool-icon {
-    font-size: 56px;
-    margin-bottom: 16px;
-    display: block;
-    animation: bob 3s ease-in-out infinite;
-  }
-
-  @keyframes bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
   /* CARDS */
   .card {
     background: var(--white);
@@ -126,11 +114,51 @@
     margin-bottom: 20px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
+    text-align: center;
   }
 
   .card-title .emoji {
     font-size: 26px;
+    display: inline-block;
+    animation: wiggle 2.4s ease-in-out infinite;
+  }
+
+  .card-title .emoji.spin {
+    animation: spin-bob 3s ease-in-out infinite;
+  }
+
+  .card-title .emoji.pulse {
+    animation: pulse-grow 2s ease-in-out infinite;
+  }
+
+  .card-title .emoji.bounce {
+    animation: bounce-up 2s ease-in-out infinite;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-12deg); }
+    40% { transform: rotate(12deg); }
+    60% { transform: rotate(-6deg); }
+    80% { transform: rotate(6deg); }
+  }
+
+  @keyframes spin-bob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    30% { transform: translateY(-6px) rotate(15deg); }
+    70% { transform: translateY(-3px) rotate(-10deg); }
+  }
+
+  @keyframes pulse-grow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+  }
+
+  @keyframes bounce-up {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
   }
 
   /* DETAILS GRID */
@@ -495,13 +523,12 @@
 
   <!-- HERO -->
   <div class="hero">
-    <span class="pool-icon">🏊‍♀️</span>
     <div class="hero-badge">You're Invited!</div>
     <h1>
       Lillian's 9th Birthday
       <span>Pool Party!</span>
     </h1>
-    <p class="hero-sub">Sunday, June 28th, 2026 &nbsp;·&nbsp; Wall, NJ</p>
+    <p class="hero-sub">Sunday, June 28th, 2026 &nbsp;|&nbsp; Wall, NJ</p>
   </div>
 
   <!-- PARTY DETAILS -->
@@ -514,19 +541,19 @@
       </div>
       <div class="detail-item">
         <div class="detail-label">Time</div>
-        <div class="detail-value">11:00 AM – 7:00 PM</div>
+        <div class="detail-value">11:00 AM to 7:00 PM</div>
       </div>
       <div class="detail-item">
         <div class="detail-label">Location</div>
         <div class="detail-value">
-          <a href="https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ" target="_blank" rel="noopener">
-            📍 1500 Heritage Court<br>Wall, NJ
+          <a href="https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ+07753" target="_blank" rel="noopener">
+            📍 1500 Heritage Court<br>Wall, NJ 07753
           </a>
         </div>
       </div>
       <div class="detail-item">
         <div class="detail-label">Vibe</div>
-        <div class="detail-value">☀️ Pool Party — bring your swimsuit!</div>
+        <div class="detail-value">☀️ Pool Party! Bring your swimsuit!</div>
       </div>
     </div>
 
@@ -534,15 +561,15 @@
       <span class="big-emoji">🍦</span>
       <div>
         <h3>Best Day Ever Ice Cream Truck!</h3>
-        <p>Rolling up around 1:30 – 2:00 PM. Don't miss it!</p>
+        <p>Rolling up around 1:30 to 2:00 PM. Don't miss it!</p>
       </div>
     </div>
   </div>
 
   <!-- GIFT WISHLIST -->
   <div class="card">
-    <div class="card-title"><span class="emoji">🎁</span> Lillian's Wish List</div>
-    <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 16px; font-weight: 600;">Your presence is the best present — but if you'd like gift ideas, Lillian has a list!</p>
+    <div class="card-title"><span class="emoji pulse">🎁</span> Lillian's Wish List</div>
+    <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 16px; font-weight: 600;">Your presence is the best present, but if you'd like gift ideas, Lillian has a list!</p>
     <a href="https://spengeman.com/gifts_lillian" target="_blank" rel="noopener" class="gift-link-box">
       <span class="big-emoji">🎀</span>
       <div class="gift-text">
@@ -554,7 +581,7 @@
 
   <!-- RSVP -->
   <div class="card" id="rsvp-card">
-    <div class="card-title"><span class="emoji">✉️</span> RSVP</div>
+    <div class="card-title"><span class="emoji bounce">✉️</span> RSVP</div>
 
     <div id="rsvp-form-wrap">
       <div class="rsvp-form">
@@ -601,7 +628,7 @@
 
   <!-- SEND REMINDER -->
   <div class="card">
-    <div class="card-title"><span class="emoji">📧</span> Send Yourself a Reminder</div>
+    <div class="card-title"><span class="emoji spin">📧</span> Send Yourself a Reminder</div>
     <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-weight: 600;">Want the party details emailed to you? Enter your address and we'll send it over!</p>
 
     <div class="form-group" style="margin-bottom: 12px;">
@@ -627,9 +654,9 @@
 
 <script>
   // ============================================================
-  // CONFIGURATION — paste your deployed Apps Script URL here
+  // CONFIGURATION: paste your deployed Apps Script URL here
   // ============================================================
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJYjh5mpj6e-kf7bPPxNN0nXpx-M4ymdlHrv_o0lDaTZGCZv0AuMRZVI43KHWeZPh7/exec';
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
   // ============================================================
 
   // Build Google Calendar link
@@ -637,8 +664,8 @@
   const gcalParams = new URLSearchParams({
     text: "Lillian's 9th Birthday Pool Party! 🎉",
     dates: '20260628T150000Z/20260629T000000Z',
-    details: "🏊 Pool Party!\n\n📍 1500 Heritage Court, Wall, NJ\n\n🕚 11:00 AM – 7:00 PM\n\n🍦 Ice Cream Truck at 1:30-2 PM!\n\n🎁 Wish list: https://spengeman.com/gifts_lillian\n\n🗺️ Map: https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ",
-    location: '1500 Heritage Court, Wall, NJ',
+    details: "🏊 Pool Party!\n\n📍 1500 Heritage Court, Wall, NJ 07753\n\n🕚 11:00 AM to 7:00 PM\n\n🍦 Ice Cream Truck at 1:30-2 PM!\n\n🎁 Wish list: https://spengeman.com/gifts_lillian\n\n🗺️ Map: https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ+07753",
+    location: '1500 Heritage Court, Wall, NJ 07753',
     sf: 'true',
     output: 'xml'
   });
@@ -654,7 +681,7 @@
     'DTEND:20260628T190000',
     'SUMMARY:Lillian\'s 9th Birthday Pool Party!',
     'DESCRIPTION:Pool Party! Ice Cream Truck at 1:30-2PM.\\nWish list: https://spengeman.com/gifts_lillian',
-    'LOCATION:1500 Heritage Court\\, Wall\\, NJ',
+    'LOCATION:1500 Heritage Court\\, Wall\\, NJ 07753',
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
@@ -688,7 +715,7 @@
     });
 
     if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-      // Demo mode — show confirmation without real submission
+      // Demo mode: show confirmation without real submission
       showConfirmation(answer, names);
       return;
     }
@@ -699,11 +726,11 @@
         if (data.success) {
           showConfirmation(answer, names);
         } else {
-          showStatus('status-rsvp', '⚠️ Something went wrong — please try again!', 'error');
+          showStatus('status-rsvp', '⚠️ Something went wrong. Please try again!', 'error');
         }
       })
       .catch(() => {
-        showStatus('status-rsvp', '⚠️ Connection error — please try again!', 'error');
+        showStatus('status-rsvp', '⚠️ Connection error. Please try again!', 'error');
       });
   }
 
@@ -718,7 +745,7 @@
     } else {
       document.getElementById('submitted-emoji').textContent = '💕';
       document.getElementById('submitted-title').textContent = 'We\'ll miss you!';
-      document.getElementById('submitted-msg').textContent = 'Thanks for letting us know — we\'ll miss having you there!';
+      document.getElementById('submitted-msg').textContent = 'Thanks for letting us know. We\'ll miss having you there!';
     }
   }
 
@@ -742,11 +769,11 @@
           showStatus('status-email', '✅ Reminder sent to ' + email + '!', 'success');
           document.getElementById('reminder-email').value = '';
         } else {
-          showStatus('status-email', '⚠️ Could not send — please try again!', 'error');
+          showStatus('status-email', '⚠️ Could not send. Please try again!', 'error');
         }
       })
       .catch(() => {
-        showStatus('status-email', '⚠️ Connection error — please try again!', 'error');
+        showStatus('status-email', '⚠️ Connection error. Please try again!', 'error');
       });
   }
 </script>
