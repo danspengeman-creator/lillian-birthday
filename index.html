@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lillian's 9th Birthday Pool Party! 🎉</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff6eb4;
+    --pink-light: #ffe0f0;
+    --pink-dark: #c94e8a;
+    --teal: #3ecfcf;
+    --teal-light: #d0f5f5;
+    --yellow: #ffde59;
+    --yellow-dark: #e8b800;
+    --purple: #a78bfa;
+    --purple-light: #ede9fe;
+    --white: #ffffff;
+    --bg: #fff8fd;
+    --text: #2d1a2e;
+    --text-muted: #7a5c7e;
+    --radius: 20px;
+    --radius-lg: 32px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Bubbles background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 10% 20%, rgba(255,110,180,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 90% 10%, rgba(62,207,207,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(167,139,250,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 56px 20px 40px;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: var(--teal-light);
+    color: #0e7a7a;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(38px, 8vw, 68px);
+    line-height: 1.15;
+    color: var(--pink-dark);
+    text-shadow: 3px 3px 0 rgba(255,110,180,0.2);
+    margin-bottom: 8px;
+  }
+
+  .hero h1 span {
+    color: var(--teal);
+    display: block;
+    font-size: clamp(28px, 6vw, 50px);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 28px;
+  }
+
+  .pool-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    display: block;
+    animation: bob 3s ease-in-out infinite;
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    border: 2px solid rgba(255,110,180,0.12);
+    box-shadow: 0 4px 24px rgba(201,78,138,0.07);
+  }
+
+  .card-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 22px;
+    color: var(--pink-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title .emoji {
+    font-size: 26px;
+  }
+
+  /* DETAILS GRID */
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .detail-item {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    border: 1.5px solid rgba(255,110,180,0.15);
+  }
+
+  .detail-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .detail-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .detail-value a {
+    color: var(--teal);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .detail-value a:hover {
+    text-decoration: underline;
+  }
+
+  /* HIGHLIGHT BOX */
+  .highlight-box {
+    background: linear-gradient(135deg, #fff5e0, #fffbe0);
+    border: 2px dashed var(--yellow-dark);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .highlight-box .big-emoji {
+    font-size: 42px;
+    flex-shrink: 0;
+  }
+
+  .highlight-box h3 {
+    font-size: 16px;
+    font-weight: 900;
+    color: #7a5000;
+    margin-bottom: 4px;
+  }
+
+  .highlight-box p {
+    font-size: 14px;
+    color: #a07020;
+    font-weight: 600;
+  }
+
+  /* RSVP FORM */
+  .rsvp-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 520px) {
+    .form-row { grid-template-columns: 1fr; }
+    .card { padding: 22px 20px; }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 12px 16px;
+    border: 2px solid rgba(255,110,180,0.2);
+    border-radius: var(--radius);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--pink);
+    background: white;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  /* BUTTONS */
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 520px) {
+    .btn-group { grid-template-columns: 1fr; }
+  }
+
+  .btn {
+    padding: 16px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-yes {
+    background: var(--pink);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255,110,180,0.35);
+  }
+
+  .btn-yes:hover {
+    background: var(--pink-dark);
+    box-shadow: 0 6px 20px rgba(201,78,138,0.4);
+    transform: translateY(-2px);
+  }
+
+  .btn-no {
+    background: white;
+    color: var(--text-muted);
+    border: 2px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .btn-no:hover {
+    background: #f5f5f5;
+    transform: translateY(-2px);
+  }
+
+  /* EMAIL SECTION */
+  .email-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .email-row input {
+    flex: 1;
+  }
+
+  .btn-email {
+    background: var(--teal);
+    color: white;
+    box-shadow: 0 4px 16px rgba(62,207,207,0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .btn-email:hover {
+    background: #2aafaf;
+    transform: translateY(-2px);
+  }
+
+  /* CALENDAR BUTTONS */
+  .calendar-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .btn-cal {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+
+  .btn-cal:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+  }
+
+  .btn-gcal {
+    background: #4285f4;
+    color: white;
+  }
+
+  .btn-ical {
+    background: #555;
+    color: white;
+  }
+
+  .btn-outlook {
+    background: #0078d4;
+    color: white;
+  }
+
+  /* STATUS MESSAGE */
+  .status-msg {
+    display: none;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    font-weight: 700;
+    font-size: 15px;
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .status-msg.success {
+    background: #d4f5e2;
+    color: #1a6b3a;
+    border: 1.5px solid #6fd0a0;
+  }
+
+  .status-msg.error {
+    background: #fde8e8;
+    color: #9b1c1c;
+    border: 1.5px solid #f5a0a0;
+  }
+
+  /* GIFT LINK */
+  .gift-link-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--purple-light);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    text-decoration: none;
+    color: #4c1d95;
+    font-weight: 700;
+    transition: transform 0.15s;
+    border: 2px solid rgba(167,139,250,0.3);
+  }
+
+  .gift-link-box:hover {
+    transform: translateY(-2px);
+  }
+
+  .gift-link-box .big-emoji {
+    font-size: 36px;
+  }
+
+  .gift-link-box .gift-text h3 {
+    font-size: 16px;
+    font-weight: 900;
+    margin-bottom: 2px;
+  }
+
+  .gift-link-box .gift-text p {
+    font-size: 13px;
+    color: #6d28d9;
+    font-weight: 600;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Loading state */
+  .btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .submitted-banner {
+    display: none;
+    background: linear-gradient(135deg, #ffe0f0, #e0f5ff);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: center;
+    border: 2px solid rgba(255,110,180,0.2);
+  }
+
+  .submitted-banner .big-emoji {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .submitted-banner h2 {
+    font-family: 'Pacifico', cursive;
+    font-size: 28px;
+    color: var(--pink-dark);
+    margin-bottom: 8px;
+  }
+
+  .submitted-banner p {
+    color: var(--text-muted);
+    font-size: 16px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="pool-icon">🏊‍♀️</span>
+    <div class="hero-badge">You're Invited!</div>
+    <h1>
+      Lillian's 9th Birthday
+      <span>Pool Party!</span>
+    </h1>
+    <p class="hero-sub">Sunday, June 28th, 2026 &nbsp;·&nbsp; Wall, NJ</p>
+  </div>
+
+  <!-- PARTY DETAILS -->
+  <div class="card">
+    <div class="card-title"><span class="emoji">🎉</span> Party Details</div>
+    <div class="details-grid">
+      <div class="detail-item">
+        <div class="detail-label">Date</div>
+        <div class="detail-value">Sunday, June 28th, 2026</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Time</div>
+        <div class="detail-value">11:00 AM – 7:00 PM</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Location</div>
+        <div class="detail-value">
+          <a href="https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ" target="_blank" rel="noopener">
+            📍 1500 Heritage Court<br>Wall, NJ
+          </a>
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-label">Vibe</div>
+        <div class="detail-value">☀️ Pool Party — bring your swimsuit!</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <span class="big-emoji">🍦</span>
+      <div>
+        <h3>Best Day Ever Ice Cream Truck!</h3>
+        <p>Rolling up around 1:30 – 2:00 PM. Don't miss it!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIFT WISHLIST -->
+  <div class="card">
+    <div class="card-title"><span class="emoji">🎁</span> Lillian's Wish List</div>
+    <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 16px; font-weight: 600;">Your presence is the best present — but if you'd like gift ideas, Lillian has a list!</p>
+    <a href="https://spengeman.com/gifts_lillian" target="_blank" rel="noopener" class="gift-link-box">
+      <span class="big-emoji">🎀</span>
+      <div class="gift-text">
+        <h3>View Lillian's Wish List</h3>
+        <p>spengeman.com/gifts_lillian →</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- RSVP -->
+  <div class="card" id="rsvp-card">
+    <div class="card-title"><span class="emoji">✉️</span> RSVP</div>
+
+    <div id="rsvp-form-wrap">
+      <div class="rsvp-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Your Name(s)</label>
+            <textarea id="names" placeholder="e.g. Sarah, Tom & the kids" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Number of Guests</label>
+            <select id="guest-count">
+              <option value="">How many coming?</option>
+              <option value="1">1 person</option>
+              <option value="2">2 people</option>
+              <option value="3">3 people</option>
+              <option value="4">4 people</option>
+              <option value="5">5 people</option>
+              <option value="6">6 people</option>
+              <option value="7">7 people</option>
+              <option value="8">8 people</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="status-rsvp" class="status-msg"></div>
+
+        <div class="btn-group">
+          <button class="btn btn-yes" onclick="submitRsvp('yes')">
+            🎉 We can make it!
+          </button>
+          <button class="btn btn-no" onclick="submitRsvp('no')">
+            😢 Sorry, we can't go
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="submitted-banner" id="submitted-banner">
+      <span class="big-emoji" id="submitted-emoji">🎉</span>
+      <h2 id="submitted-title">Yay! See you there!</h2>
+      <p id="submitted-msg">Thanks for letting us know. Lillian can't wait to celebrate with you!</p>
+    </div>
+  </div>
+
+  <!-- SEND REMINDER -->
+  <div class="card">
+    <div class="card-title"><span class="emoji">📧</span> Send Yourself a Reminder</div>
+    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-weight: 600;">Want the party details emailed to you? Enter your address and we'll send it over!</p>
+
+    <div class="form-group" style="margin-bottom: 12px;">
+      <label>Your Email Address</label>
+      <div class="email-row">
+        <input type="email" id="reminder-email" placeholder="you@example.com" />
+        <button class="btn-email" onclick="sendReminder()">📨 Send Me Details</button>
+      </div>
+    </div>
+    <div id="status-email" class="status-msg"></div>
+
+    <div class="calendar-links">
+      <a class="btn-cal btn-gcal" id="gcal-link" href="#" target="_blank" rel="noopener">📅 Add to Google Calendar</a>
+      <a class="btn-cal btn-ical" id="ical-download" href="#" download="lillian_birthday_party.ics">🍎 Download .ics (Apple / Outlook)</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    Made with 💕 for Lillian's 9th Birthday · June 28, 2026
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // CONFIGURATION — paste your deployed Apps Script URL here
+  // ============================================================
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiX9VGLuD92ldA0DWpPJ2DxGUr_e8dg2gTtX_q8MoAFhSb0l6FCtNjQGNhQ56Y6bRK/exec';
+  // ============================================================
+
+  // Build Google Calendar link
+  const gcalBase = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+  const gcalParams = new URLSearchParams({
+    text: "Lillian's 9th Birthday Pool Party! 🎉",
+    dates: '20260628T150000Z/20260629T000000Z',
+    details: "🏊 Pool Party!\n\n📍 1500 Heritage Court, Wall, NJ\n\n🕚 11:00 AM – 7:00 PM\n\n🍦 Ice Cream Truck at 1:30-2 PM!\n\n🎁 Wish list: https://spengeman.com/gifts_lillian\n\n🗺️ Map: https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ",
+    location: '1500 Heritage Court, Wall, NJ',
+    sf: 'true',
+    output: 'xml'
+  });
+  document.getElementById('gcal-link').href = gcalBase + '&' + gcalParams.toString();
+
+  // Build .ics content
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//LillianBirthday//EN',
+    'BEGIN:VEVENT',
+    'DTSTART:20260628T110000',
+    'DTEND:20260628T190000',
+    'SUMMARY:Lillian\'s 9th Birthday Pool Party!',
+    'DESCRIPTION:Pool Party! Ice Cream Truck at 1:30-2PM.\\nWish list: https://spengeman.com/gifts_lillian',
+    'LOCATION:1500 Heritage Court\\, Wall\\, NJ',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+  const icsBlob = new Blob([icsContent], { type: 'text/calendar' });
+  document.getElementById('ical-download').href = URL.createObjectURL(icsBlob);
+
+  function showStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'status-msg ' + type;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 6000);
+  }
+
+  function submitRsvp(answer) {
+    const names = document.getElementById('names').value.trim();
+    const count = document.getElementById('guest-count').value;
+
+    if (!names) {
+      showStatus('status-rsvp', '👋 Please enter your name(s) first!', 'error');
+      return;
+    }
+
+    const going = answer === 'yes' ? 'Yes' : 'No';
+
+    const params = new URLSearchParams({
+      action: 'rsvp',
+      names: names,
+      count: count || '?',
+      going: going
+    });
+
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      // Demo mode — show confirmation without real submission
+      showConfirmation(answer, names);
+      return;
+    }
+
+    fetch(APPS_SCRIPT_URL + '?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showConfirmation(answer, names);
+        } else {
+          showStatus('status-rsvp', '⚠️ Something went wrong — please try again!', 'error');
+        }
+      })
+      .catch(() => {
+        showStatus('status-rsvp', '⚠️ Connection error — please try again!', 'error');
+      });
+  }
+
+  function showConfirmation(answer, names) {
+    document.getElementById('rsvp-form-wrap').style.display = 'none';
+    const banner = document.getElementById('submitted-banner');
+    banner.style.display = 'block';
+    if (answer === 'yes') {
+      document.getElementById('submitted-emoji').textContent = '🎉';
+      document.getElementById('submitted-title').textContent = 'Yay! See you there!';
+      document.getElementById('submitted-msg').textContent = 'Thanks ' + (names.split(/[,&]/)[0].trim()) + '! Lillian can\'t wait to celebrate with you!';
+    } else {
+      document.getElementById('submitted-emoji').textContent = '💕';
+      document.getElementById('submitted-title').textContent = 'We\'ll miss you!';
+      document.getElementById('submitted-msg').textContent = 'Thanks for letting us know — we\'ll miss having you there!';
+    }
+  }
+
+  function sendReminder() {
+    const email = document.getElementById('reminder-email').value.trim();
+    if (!email || !email.includes('@')) {
+      showStatus('status-email', '📧 Please enter a valid email address!', 'error');
+      return;
+    }
+
+    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      showStatus('status-email', '✅ (Demo mode) In production, a reminder would be sent to ' + email, 'success');
+      return;
+    }
+
+    const params = new URLSearchParams({ action: 'email', to: email });
+    fetch(APPS_SCRIPT_URL + '?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showStatus('status-email', '✅ Reminder sent to ' + email + '!', 'success');
+          document.getElementById('reminder-email').value = '';
+        } else {
+          showStatus('status-email', '⚠️ Could not send — please try again!', 'error');
+        }
+      })
+      .catch(() => {
+        showStatus('status-email', '⚠️ Connection error — please try again!', 'error');
+      });
+  }
+</script>
+
+</body>
+</html>
