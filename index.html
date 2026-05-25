@@ -524,6 +524,43 @@
     font-size: 16px;
     font-weight: 600;
   }
+
+  .inline-reminder {
+    display: none;
+    margin-top: 20px;
+    width: 100%;
+  }
+
+  .inline-reminder p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .inline-reminder .email-row {
+    justify-content: center;
+  }
+
+  .inline-reminder input[type="email"] {
+    padding: 12px 16px;
+    border: 2px solid rgba(255,110,180,0.25);
+    border-radius: var(--radius);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+    flex: 1;
+    max-width: 280px;
+  }
+
+  .inline-reminder input[type="email"]:focus {
+    border-color: var(--pink);
+    background: white;
+  }
 </style>
 </head>
 <body>
@@ -668,6 +705,14 @@
       <span class="big-emoji" id="submitted-emoji">🎉</span>
       <h2 id="submitted-title">Yay! See you there!</h2>
       <p id="submitted-msg">Thanks for letting us know. Lillian can't wait to celebrate with you!</p>
+      <div class="inline-reminder" id="inline-reminder">
+        <p>📧 Want a reminder? We'll email you the party details!</p>
+        <div class="email-row" style="display:flex; gap:10px; justify-content:center;">
+          <input type="email" id="inline-reminder-email" placeholder="you@example.com" />
+          <button class="btn-email" onclick="sendReminderInline()">📨 Send Me Details</button>
+        </div>
+        <div id="status-inline-email" class="status-msg" style="margin-top:8px;"></div>
+      </div>
     </div>
   </div>
 
@@ -787,11 +832,35 @@
       document.getElementById('submitted-emoji').textContent = '🎉';
       document.getElementById('submitted-title').textContent = 'Yay! See you there!';
       document.getElementById('submitted-msg').textContent = 'Thanks ' + (names.split(/[,&]/)[0].trim()) + '! Lillian can\'t wait to celebrate with you!';
+      document.getElementById('inline-reminder').style.display = 'block';
     } else {
       document.getElementById('submitted-emoji').textContent = '💕';
       document.getElementById('submitted-title').textContent = 'We\'ll miss you!';
       document.getElementById('submitted-msg').textContent = 'Thanks for letting us know. We\'ll miss having you there!';
+      document.getElementById('inline-reminder').style.display = 'none';
     }
+  }
+
+  function sendReminderInline() {
+    const email = document.getElementById('inline-reminder-email').value.trim();
+    if (!email || !email.includes('@')) {
+      showStatus('status-inline-email', '📧 Please enter a valid email address!', 'error');
+      return;
+    }
+    const params = new URLSearchParams({ action: 'email', to: email });
+    fetch(APPS_SCRIPT_URL + '?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showStatus('status-inline-email', '✅ Reminder sent to ' + email + '!', 'success');
+          document.getElementById('inline-reminder-email').value = '';
+        } else {
+          showStatus('status-inline-email', '⚠️ Could not send. Please try again!', 'error');
+        }
+      })
+      .catch(() => {
+        showStatus('status-inline-email', '⚠️ Connection error. Please try again!', 'error');
+      });
   }
 
   function sendReminder() {
