@@ -561,9 +561,101 @@
     border-color: var(--pink);
     background: white;
   }
+
+  /* FLOATING BUBBLES */
+  .bubble-field {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .bubble {
+    position: absolute;
+    bottom: -120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(62,207,207,0.18) 70%, rgba(255,110,180,0.12));
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: rise linear infinite;
+  }
+
+  @keyframes rise {
+    0% {
+      transform: translateY(0) translateX(0) scale(1);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.8;
+    }
+    90% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateY(-110vh) translateX(var(--drift, 30px)) scale(1.15);
+      opacity: 0;
+    }
+  }
+
+  /* COUNTDOWN */
+  .countdown-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .countdown-box {
+    background: white;
+    border: 2px solid rgba(255,110,180,0.18);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    min-width: 76px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(201,78,138,0.08);
+  }
+
+  .countdown-number {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--pink-dark);
+    line-height: 1.1;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .countdown-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .countdown-done {
+    font-family: 'Pacifico', cursive;
+    font-size: 24px;
+    color: var(--pink-dark);
+    margin-top: 16px;
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
 </head>
 <body>
+
+<div class="bubble-field" id="bubble-field"></div>
 
 <div class="container">
 
@@ -575,10 +667,31 @@
       <span>Pool Party!</span>
     </h1>
     <p class="hero-sub">Sunday, June 28th, 2026 &nbsp;|&nbsp; Wall, NJ</p>
+
+    <div id="countdown-container">
+      <div class="countdown-wrap" id="countdown-wrap">
+        <div class="countdown-box">
+          <div class="countdown-number" id="cd-days">--</div>
+          <div class="countdown-label">Days</div>
+        </div>
+        <div class="countdown-box">
+          <div class="countdown-number" id="cd-hours">--</div>
+          <div class="countdown-label">Hours</div>
+        </div>
+        <div class="countdown-box">
+          <div class="countdown-number" id="cd-mins">--</div>
+          <div class="countdown-label">Minutes</div>
+        </div>
+        <div class="countdown-box">
+          <div class="countdown-number" id="cd-secs">--</div>
+          <div class="countdown-label">Seconds</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- PARTY DETAILS -->
-  <div class="card">
+  <div class="card reveal">
     <div class="card-title"><span class="emoji">🎉</span> Party Details</div>
     <div class="details-grid">
       <div class="detail-item">
@@ -648,7 +761,7 @@
   </div>
 
   <!-- GIFT WISHLIST -->
-  <div class="card">
+  <div class="card reveal">
     <div class="card-title"><span class="emoji pulse">🎁</span> Lillian's Wish List</div>
     <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 16px; font-weight: 600;">Your presence is the best present, but if you'd like gift ideas, Lillian has a list!</p>
     <a href="https://spengeman.com/gifts_lillian" target="_blank" rel="noopener" class="gift-link-box">
@@ -662,7 +775,7 @@
   </div>
 
   <!-- RSVP -->
-  <div class="card" id="rsvp-card">
+  <div class="card reveal" id="rsvp-card">
     <div class="card-title"><span class="emoji bounce">✉️</span> RSVP</div>
 
     <div id="rsvp-form-wrap">
@@ -717,7 +830,7 @@
   </div>
 
   <!-- SEND REMINDER -->
-  <div class="card">
+  <div class="card reveal">
     <div class="card-title"><span class="emoji spin">📧</span> Send Yourself a Reminder</div>
     <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-weight: 600;">Want the party details emailed to you? Enter your address and we'll send it over!</p>
 
@@ -890,6 +1003,89 @@
         showStatus('status-email', '⚠️ Connection error. Please try again!', 'error');
       });
   }
+
+  // ============================================================
+  // FLOATING BUBBLES
+  // ============================================================
+  function createBubbles() {
+    const field = document.getElementById('bubble-field');
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = Math.random() * 50 + 14; // 14px - 64px
+      const left = Math.random() * 100; // %
+      const duration = Math.random() * 14 + 12; // 12s - 26s
+      const delay = Math.random() * -26; // start mid-animation
+      const drift = (Math.random() * 120 - 60) + 'px';
+      bubble.style.width = size + 'px';
+      bubble.style.height = size + 'px';
+      bubble.style.left = left + '%';
+      bubble.style.animationDuration = duration + 's';
+      bubble.style.animationDelay = delay + 's';
+      bubble.style.setProperty('--drift', drift);
+      field.appendChild(bubble);
+    }
+  }
+  createBubbles();
+
+  // ============================================================
+  // COUNTDOWN TIMER
+  // ============================================================
+  function startCountdown() {
+    const partyDate = new Date('2026-06-28T11:00:00-04:00').getTime();
+
+    function update() {
+      const now = new Date().getTime();
+      const diff = partyDate - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdown-wrap').style.display = 'none';
+        const container = document.getElementById('countdown-container');
+        if (!document.getElementById('countdown-done-msg')) {
+          const msg = document.createElement('div');
+          msg.id = 'countdown-done-msg';
+          msg.className = 'countdown-done';
+          msg.textContent = "It's party day! 🎉";
+          container.appendChild(msg);
+        }
+        clearInterval(timer);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('cd-days').textContent = days;
+      document.getElementById('cd-hours').textContent = hours;
+      document.getElementById('cd-mins').textContent = mins;
+      document.getElementById('cd-secs').textContent = secs;
+    }
+
+    update();
+    const timer = setInterval(update, 1000);
+  }
+  startCountdown();
+
+  // ============================================================
+  // SCROLL REVEAL ANIMATIONS
+  // ============================================================
+  function initScrollReveal() {
+    const items = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    items.forEach(item => observer.observe(item));
+  }
+  initScrollReveal();
 </script>
 
 </body>
