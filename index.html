@@ -600,38 +600,47 @@
 
   /* COUNTDOWN */
   .countdown-wrap {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     margin-top: 24px;
-    flex-wrap: wrap;
-  }
-
-  .countdown-box {
     background: white;
     border: 2px solid rgba(255,110,180,0.18);
-    border-radius: var(--radius);
-    padding: 14px 18px;
-    min-width: 76px;
-    text-align: center;
+    border-radius: 999px;
+    padding: 14px 28px;
     box-shadow: 0 4px 16px rgba(201,78,138,0.08);
+    animation: countdown-pulse 2.5s ease-in-out infinite;
   }
 
   .countdown-number {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 900;
     color: var(--pink-dark);
-    line-height: 1.1;
+    line-height: 1;
     font-family: 'Nunito', sans-serif;
   }
 
-  .countdown-label {
-    font-size: 11px;
+  .countdown-text {
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
     color: var(--text-muted);
-    margin-top: 2px;
+    text-align: left;
+    line-height: 1.2;
+  }
+
+  .countdown-text .small {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+
+  @keyframes countdown-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
   }
 
   .countdown-done {
@@ -671,22 +680,11 @@
 
     <div id="countdown-container">
       <div class="countdown-wrap" id="countdown-wrap">
-        <div class="countdown-box">
-          <div class="countdown-number" id="cd-days">--</div>
-          <div class="countdown-label">Days</div>
-        </div>
-        <div class="countdown-box">
-          <div class="countdown-number" id="cd-hours">--</div>
-          <div class="countdown-label">Hours</div>
-        </div>
-        <div class="countdown-box">
-          <div class="countdown-number" id="cd-mins">--</div>
-          <div class="countdown-label">Minutes</div>
-        </div>
-        <div class="countdown-box">
-          <div class="countdown-number" id="cd-secs">--</div>
-          <div class="countdown-label">Seconds</div>
-        </div>
+        <span class="countdown-number" id="cd-days">--</span>
+        <span class="countdown-text">
+          <span class="small">Get Ready!</span>
+          The party is in <span id="cd-days-word">--</span> days!
+        </span>
       </div>
     </div>
   </div>
@@ -1049,36 +1047,38 @@
     const partyDate = new Date('2026-06-28T11:00:00-04:00').getTime();
 
     function update() {
-      const now = new Date().getTime();
-      const diff = partyDate - now;
+      const now = new Date();
 
-      if (diff <= 0) {
-        document.getElementById('countdown-wrap').style.display = 'none';
+      // Compare calendar days (midnight to midnight) rather than exact
+      // hours, so the count only ticks down once per day regardless of
+      // what time it currently is.
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const partyDay = new Date('2026-06-28T00:00:00-04:00').getTime();
+
+      const diffDays = Math.round((partyDay - startOfToday) / (1000 * 60 * 60 * 24));
+
+      if (now.getTime() >= partyDate) {
         const container = document.getElementById('countdown-container');
         if (!document.getElementById('countdown-done-msg')) {
+          document.getElementById('countdown-wrap').style.display = 'none';
           const msg = document.createElement('div');
           msg.id = 'countdown-done-msg';
           msg.className = 'countdown-done';
-          msg.textContent = "It's party day! 🎉";
+          msg.textContent = "It's party day!";
           container.appendChild(msg);
         }
         clearInterval(timer);
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      const days = Math.max(diffDays, 0);
 
       document.getElementById('cd-days').textContent = days;
-      document.getElementById('cd-hours').textContent = hours;
-      document.getElementById('cd-mins').textContent = mins;
-      document.getElementById('cd-secs').textContent = secs;
+      document.getElementById('cd-days-word').textContent = days;
     }
 
     update();
-    const timer = setInterval(update, 1000);
+    const timer = setInterval(update, 1000 * 60); // refresh every minute is plenty for a day counter
   }
   startCountdown();
 
