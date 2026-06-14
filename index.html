@@ -562,7 +562,7 @@
     background: white;
   }
 
-  /* FLOATING BUBBLES */
+  /* FALLING CONFETTI */
   .bubble-field {
     position: fixed;
     inset: 0;
@@ -571,28 +571,29 @@
     z-index: 0;
   }
 
-  .bubble {
+  .confetti-piece {
     position: absolute;
-    bottom: -120px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(62,207,207,0.18) 70%, rgba(255,110,180,0.12));
-    border: 1px solid rgba(255,255,255,0.5);
-    animation: rise linear infinite;
+    top: -40px;
+    animation: confetti-fall linear infinite;
+    opacity: 0;
   }
 
-  @keyframes rise {
+  @keyframes confetti-fall {
     0% {
-      transform: translateY(0) translateX(0) scale(1);
+      transform: translateY(0) translateX(0) rotate(0deg);
       opacity: 0;
     }
-    10% {
+    8% {
+      opacity: 0.9;
+    }
+    50% {
+      transform: translateY(55vh) translateX(var(--drift, 30px)) rotate(var(--rot, 180deg));
+    }
+    92% {
       opacity: 0.8;
     }
-    90% {
-      opacity: 0.6;
-    }
     100% {
-      transform: translateY(-110vh) translateX(var(--drift, 30px)) scale(1.15);
+      transform: translateY(115vh) translateX(calc(var(--drift, 30px) * 2)) rotate(var(--rot2, 360deg));
       opacity: 0;
     }
   }
@@ -1005,29 +1006,41 @@
   }
 
   // ============================================================
-  // FLOATING BUBBLES
+  // FALLING CONFETTI
   // ============================================================
-  function createBubbles() {
+  const CONFETTI_COLORS = ['#ff6eb4', '#3ecfcf', '#ffde59', '#a78bfa', '#ff9ebc', '#7adfdf'];
+
+  function createConfetti() {
     const field = document.getElementById('bubble-field');
-    const count = 18;
+    const count = 40;
     for (let i = 0; i < count; i++) {
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      const size = Math.random() * 50 + 14; // 14px - 64px
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      const width = Math.random() * 6 + 6;  // 6-12px
+      const height = Math.random() * 10 + 10; // 10-20px
       const left = Math.random() * 100; // %
-      const duration = Math.random() * 14 + 12; // 12s - 26s
-      const delay = Math.random() * -26; // start mid-animation
-      const drift = (Math.random() * 120 - 60) + 'px';
-      bubble.style.width = size + 'px';
-      bubble.style.height = size + 'px';
-      bubble.style.left = left + '%';
-      bubble.style.animationDuration = duration + 's';
-      bubble.style.animationDelay = delay + 's';
-      bubble.style.setProperty('--drift', drift);
-      field.appendChild(bubble);
+      const duration = Math.random() * 6 + 7; // 7s - 13s
+      const delay = Math.random() * -13; // stagger start
+      const drift = (Math.random() * 160 - 80) + 'px';
+      const rot = (Math.random() * 360) + 'deg';
+      const rot2 = (Math.random() * 720 + 360) + 'deg';
+      const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      const shape = Math.random() > 0.5 ? '50%' : '2px';
+
+      piece.style.width = width + 'px';
+      piece.style.height = height + 'px';
+      piece.style.left = left + '%';
+      piece.style.background = color;
+      piece.style.borderRadius = shape;
+      piece.style.animationDuration = duration + 's';
+      piece.style.animationDelay = delay + 's';
+      piece.style.setProperty('--drift', drift);
+      piece.style.setProperty('--rot', rot);
+      piece.style.setProperty('--rot2', rot2);
+      field.appendChild(piece);
     }
   }
-  createBubbles();
+  createConfetti();
 
   // ============================================================
   // COUNTDOWN TIMER
