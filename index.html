@@ -376,6 +376,17 @@
     transform: translateY(-2px);
   }
 
+  @media (max-width: 520px) {
+    .email-row {
+      flex-direction: column;
+    }
+
+    .btn-email {
+      white-space: normal;
+      width: 100%;
+    }
+  }
+
   /* CALENDAR BUTTONS */
   .calendar-links {
     display: flex;
@@ -819,7 +830,7 @@
       <p id="submitted-msg">Thanks for letting us know. Lillian can't wait to celebrate with you!</p>
       <div class="inline-reminder" id="inline-reminder">
         <p>📧 Want a reminder? We'll email you the party details!</p>
-        <div class="email-row" style="display:flex; gap:10px; justify-content:center;">
+        <div class="email-row">
           <input type="email" id="inline-reminder-email" placeholder="you@example.com" />
           <button class="btn-email" onclick="sendReminderInline()">📨 Send Me Details</button>
         </div>
