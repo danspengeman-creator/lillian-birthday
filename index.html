@@ -1250,30 +1250,29 @@
       const code = d.weather_code[0];
       const { icon, label } = weatherIcon(code);
 
-      document.getElementById('weather-content').innerHTML = \`
-        <div class="weather-main">
-          <div class="weather-icon-large">\${icon}</div>
-          <div class="weather-temp-block">
-            <div class="weather-condition">\${label}</div>
-            <div class="weather-hi-lo"><span>High \${hi}&deg;F</span> &nbsp;/&nbsp; Low \${lo}&deg;F</div>
-          </div>
-        </div>
-        <div class="weather-stats">
-          <div class="weather-stat">
-            <div class="weather-stat-label">Feels Like</div>
-            <div class="weather-stat-value">\${feelsHi}&deg; / \${feelsLo}&deg;</div>
-          </div>
-          <div class="weather-stat">
-            <div class="weather-stat-label">Rain Chance</div>
-            <div class="weather-stat-value">\${precip}%</div>
-          </div>
-          <div class="weather-stat">
-            <div class="weather-stat-label">Wind</div>
-            <div class="weather-stat-value">\${wind} mph</div>
-          </div>
-        </div>
-        <div class="weather-note">Forecast updates daily as the party date approaches.</div>
-      \`;
+      document.getElementById('weather-content').innerHTML =
+        '<div class="weather-main">' +
+          '<div class="weather-icon-large">' + icon + '</div>' +
+          '<div class="weather-temp-block">' +
+            '<div class="weather-condition">' + label + '</div>' +
+            '<div class="weather-hi-lo"><span>High ' + hi + '&deg;F</span> &nbsp;/&nbsp; Low ' + lo + '&deg;F</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="weather-stats">' +
+          '<div class="weather-stat">' +
+            '<div class="weather-stat-label">Feels Like</div>' +
+            '<div class="weather-stat-value">' + feelsHi + '&deg; / ' + feelsLo + '&deg;</div>' +
+          '</div>' +
+          '<div class="weather-stat">' +
+            '<div class="weather-stat-label">Rain Chance</div>' +
+            '<div class="weather-stat-value">' + precip + '%</div>' +
+          '</div>' +
+          '<div class="weather-stat">' +
+            '<div class="weather-stat-label">Wind</div>' +
+            '<div class="weather-stat-value">' + wind + ' mph</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="weather-note">Forecast updates daily as the party date approaches.</div>';
     } catch (e) {
       document.getElementById('weather-content').innerHTML =
         '<div class="weather-loading">Forecast unavailable right now. Check back closer to the party!</div>';
