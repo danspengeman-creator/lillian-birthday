@@ -1199,40 +1199,45 @@
   // ============================================================
   function startCountdown() {
     const partyDate = new Date('2026-06-28T11:00:00-04:00').getTime();
+    const dayAfterParty = new Date('2026-06-29T00:00:00-04:00').getTime();
+    let timer = null;
 
     function update() {
       const now = new Date();
+      const nowMs = now.getTime();
 
-      // Compare calendar days (midnight to midnight) rather than exact
-      // hours, so the count only ticks down once per day regardless of
-      // what time it currently is.
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const partyDay = new Date('2026-06-28T00:00:00-04:00').getTime();
-
-      const diffDays = Math.round((partyDay - startOfToday) / (1000 * 60 * 60 * 24));
-
-      if (now.getTime() >= partyDate) {
-        const container = document.getElementById('countdown-container');
-        if (!document.getElementById('countdown-done-msg')) {
-          document.getElementById('countdown-wrap').style.display = 'none';
-          const msg = document.createElement('div');
-          msg.id = 'countdown-done-msg';
-          msg.className = 'countdown-done';
-          msg.textContent = "It's party day!";
-          container.appendChild(msg);
-        }
-        clearInterval(timer);
+      // After June 28th is over, hide the countdown entirely
+      if (nowMs >= dayAfterParty) {
+        document.getElementById('countdown-container').style.display = 'none';
+        if (timer) clearInterval(timer);
         return;
       }
 
-      const days = Math.max(diffDays, 0);
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const partyDay = new Date('2026-06-28T00:00:00-04:00').getTime();
+      const diffDays = Math.round((partyDay - startOfToday) / (1000 * 60 * 60 * 24));
 
-      document.getElementById('cd-days').textContent = days;
-      document.getElementById('cd-days-word').textContent = days;
+      // On party day itself, show the celebration message instead of "0 days"
+      if (diffDays <= 0) {
+        document.getElementById('countdown-wrap').style.display = 'none';
+        const container = document.getElementById('countdown-container');
+        if (!document.getElementById('countdown-done-msg')) {
+          const msg = document.createElement('div');
+          msg.id = 'countdown-done-msg';
+          msg.className = 'countdown-done';
+          msg.textContent = "The party is today!";
+          container.appendChild(msg);
+        }
+        if (timer) clearInterval(timer);
+        return;
+      }
+
+      document.getElementById('cd-days').textContent = diffDays;
+      document.getElementById('cd-days-word').textContent = diffDays;
     }
 
     update();
-    const timer = setInterval(update, 1000 * 60); // refresh every minute is plenty for a day counter
+    timer = setInterval(update, 1000 * 60);
   }
   startCountdown();
 
