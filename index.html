@@ -1,1311 +1,315 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lillian's 9th Birthday Pool Party! 🎉</title>
-<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --pink: #ff6eb4;
-    --pink-light: #ffe0f0;
-    --pink-dark: #c94e8a;
-    --teal: #3ecfcf;
-    --teal-light: #d0f5f5;
-    --yellow: #ffde59;
-    --yellow-dark: #e8b800;
-    --purple: #a78bfa;
-    --purple-light: #ede9fe;
-    --white: #ffffff;
-    --bg: #fff8fd;
-    --text: #2d1a2e;
-    --text-muted: #7a5c7e;
-    --radius: 20px;
-    --radius-lg: 32px;
+// ============================================================
+// Lillian's 9th Birthday Party - Google Apps Script Backend
+// ============================================================
+//
+// SETUP INSTRUCTIONS:
+//
+// 1. Your spreadsheet ID is already set below.
+//    Sheet tab must be named "RSVPs" with these headers in row 1:
+//      A1: Person/People
+//      B1: Going/Not Going
+//      C1: Guest Count
+//      D1: Timestamp
+//      E1: Email
+//
+// 2. Go to Extensions > Apps Script, paste this file in full.
+//
+// 3. Deploy > New Deployment
+//    Type: Web App | Execute as: Me | Who has access: Anyone
+//    Copy the Web App URL and paste into the HTML file.
+//
+// 4. SET UP SCHEDULED REMINDERS (do this once):
+//    a. Click the clock icon (Triggers) in the left sidebar
+//    b. Add trigger 1:
+//         Function: sendWeekReminder
+//         Event source: Time-driven > Specific date and time
+//         Date: June 21, 2026 at 8:00 AM Eastern
+//    c. Add trigger 2:
+//         Function: sendDayReminder
+//         Event source: Time-driven > Specific date and time
+//         Date: June 27, 2026 at 8:00 AM Eastern
+//
+// ============================================================
+
+const SHEET_ID   = '1E54VM845fYWwFl6sja7YaBCLBsyce-sK2YOQSnLrxMI';
+const SHEET_NAME = 'RSVPs';
+const FROM_EMAIL = 'danspengeman@gmail.com';
+const SENDER_NAME = "Lillian's Birthday Party";
+
+const PARTY_DATE = 'Sunday, June 28th, 2026';
+const PARTY_TIME = '11:00 AM to 7:00 PM';
+const PARTY_ADDR = '1500 Heritage Court, Wall, NJ 07753';
+const MAP_LINK   = 'https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ+07753';
+const WISH_LIST  = 'https://spengeman.com/gifts_lillian';
+const GCAL_LINK  = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Lillian%27s+9th+Birthday+Pool+Party&dates=20260628T150000Z%2F20260629T000000Z&details=Pool+Party!+Ice+Cream+Truck+at+1%3A30PM.+Wishlist%3A+https%3A%2F%2Fspengeman.com%2Fgifts_lillian&location=1500+Heritage+Court%2C+Wall%2C+NJ+07753';
+
+// ============================================================
+// WEB APP ENTRY POINT
+// ============================================================
+function doGet(e) {
+  const action = e.parameter.action;
+  let result;
+  try {
+    if (action === 'rsvp')       { result = handleRsvp(e.parameter); }
+    else if (action === 'email') { result = handleEmail(e.parameter.to); }
+    else { result = { success: false, error: 'Unknown action' }; }
+  } catch (err) {
+    result = { success: false, error: err.message };
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// RSVP HANDLER
+// ============================================================
+function handleRsvp(params) {
+  const ss    = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
+
+  // Ensure header row exists
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Person/People', 'Going/Not Going', 'Guest Count', 'Timestamp', 'Email']);
+    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  // Find column positions by header name so order doesn't matter
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const col = {};
+  headers.forEach(function(h, i) { col[h.toString().trim()] = i + 1; });
 
-  body {
-    font-family: 'Nunito', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  // Build the new row using named columns
+  const newRow = new Array(Math.max(5, sheet.getLastColumn())).fill('');
+  newRow[(col['Person/People']    || 1) - 1] = params.names || 'Unknown';
+  newRow[(col['Going/Not Going']  || 2) - 1] = params.going || 'Yes';
+  newRow[(col['Guest Count']      || 3) - 1] = params.count || '?';
+  newRow[(col['Timestamp']        || 4) - 1] = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MM/dd/yyyy hh:mm a');
+  newRow[(col['Email']            || 5) - 1] = params.email || '';
 
-  /* Bubbles background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(circle at 10% 20%, rgba(255,110,180,0.08) 0%, transparent 50%),
-      radial-gradient(circle at 90% 10%, rgba(62,207,207,0.08) 0%, transparent 50%),
-      radial-gradient(circle at 50% 80%, rgba(167,139,250,0.07) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
+  sheet.appendRow(newRow);
 
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 0 20px 60px;
-    position: relative;
-    z-index: 1;
-  }
+  // Color-code the Going cell
+  const lastRow   = sheet.getLastRow();
+  const goingCol  = col['Going/Not Going'] || 2;
+  const goingCell = sheet.getRange(lastRow, goingCol);
 
-  /* HERO */
-  .hero {
-    text-align: center;
-    padding: 56px 20px 40px;
-  }
-
-  .hero-badge {
-    display: inline-block;
-    background: var(--teal-light);
-    color: #0e7a7a;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 6px 18px;
-    border-radius: 999px;
-    margin-bottom: 20px;
-  }
-
-  .hero h1 {
-    font-family: 'Pacifico', cursive;
-    font-size: clamp(38px, 8vw, 68px);
-    line-height: 1.15;
-    color: var(--pink-dark);
-    text-shadow: 3px 3px 0 rgba(255,110,180,0.2);
-    margin-bottom: 8px;
-  }
-
-  .hero h1 span {
-    color: var(--teal);
-    display: block;
-    font-size: clamp(28px, 6vw, 50px);
-  }
-
-  .hero-sub {
-    font-size: 18px;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-top: 12px;
-    margin-bottom: 28px;
-  }
-
-  /* CARDS */
-  .card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 28px 32px;
-    margin-bottom: 20px;
-    border: 2px solid rgba(255,110,180,0.12);
-    box-shadow: 0 4px 24px rgba(201,78,138,0.07);
-  }
-
-  .card-title {
-    font-family: 'Pacifico', cursive;
-    font-size: 22px;
-    color: var(--pink-dark);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-align: center;
-  }
-
-  .card-title .emoji {
-    font-size: 26px;
-    display: inline-block;
-    animation: wiggle 2.4s ease-in-out infinite;
-  }
-
-  .card-title .emoji.spin {
-    animation: spin-bob 3s ease-in-out infinite;
-  }
-
-  .card-title .emoji.pulse {
-    animation: pulse-grow 2s ease-in-out infinite;
-  }
-
-  .card-title .emoji.bounce {
-    animation: bounce-up 2s ease-in-out infinite;
-  }
-
-  @keyframes wiggle {
-    0%, 100% { transform: rotate(0deg); }
-    20% { transform: rotate(-12deg); }
-    40% { transform: rotate(12deg); }
-    60% { transform: rotate(-6deg); }
-    80% { transform: rotate(6deg); }
-  }
-
-  @keyframes spin-bob {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    30% { transform: translateY(-6px) rotate(15deg); }
-    70% { transform: translateY(-3px) rotate(-10deg); }
-  }
-
-  @keyframes pulse-grow {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.25); }
-  }
-
-  @keyframes bounce-up {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-
-  /* DETAILS GRID */
-  .details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-  }
-
-  .detail-item {
-    background: var(--bg);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    border: 1.5px solid rgba(255,110,180,0.15);
-  }
-
-  .detail-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-    text-align: left;
-  }
-
-  .detail-value {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.4;
-    text-align: left;
-  }
-
-  .detail-value a {
-    color: var(--teal);
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .detail-value a:hover {
-    text-decoration: underline;
-  }
-
-  /* REVIEW BUTTON */
-  .review-btn {
-    display: inline-block;
-    margin-top: 14px;
-    background: #4285f4;
-    color: white;
-    font-family: 'Nunito', sans-serif;
-    font-size: 14px;
-    font-weight: 900;
-    padding: 11px 22px;
-    border-radius: 999px;
-    text-decoration: none;
-    box-shadow: 0 4px 14px rgba(66,133,244,0.35);
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-
-  .review-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(66,133,244,0.45);
-  }
-
-  /* HIGHLIGHT BOX */
-  .highlight-box {
-    background: linear-gradient(135deg, #fff5e0, #fffbe0);
-    border: 2px dashed var(--yellow-dark);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 10px;
-  }
-
-  .highlight-box .truck-img {
-    width: 180px;
-    height: auto;
-    display: block;
-    animation: bounce-up 2.2s ease-in-out infinite;
-  }
-
-  .highlight-box h3 {
-    font-size: 16px;
-    font-weight: 900;
-    color: #7a5000;
-    margin-bottom: 2px;
-  }
-
-  .highlight-box p {
-    font-size: 14px;
-    color: #a07020;
-    font-weight: 600;
-  }
-
-  /* RSVP FORM */
-  .rsvp-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  @media (max-width: 520px) {
-    .form-row { grid-template-columns: 1fr; }
-    .card { padding: 22px 20px; }
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .form-group label {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 12px 16px;
-    border: 2px solid rgba(255,110,180,0.2);
-    border-radius: var(--radius);
-    font-family: 'Nunito', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    background: var(--bg);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    border-color: var(--pink);
-    background: white;
-  }
-
-  .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-
-  /* BUTTONS */
-  .btn-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 4px;
-  }
-
-  @media (max-width: 520px) {
-    .btn-group { grid-template-columns: 1fr; }
-  }
-
-  .btn {
-    padding: 16px 20px;
-    border: none;
-    border-radius: var(--radius);
-    font-family: 'Nunito', sans-serif;
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    line-height: 1.3;
-    text-align: center;
-  }
-
-  .btn:active { transform: scale(0.97); }
-
-  .btn-yes {
-    background: var(--pink);
-    color: white;
-    box-shadow: 0 4px 16px rgba(255,110,180,0.35);
-  }
-
-  .btn-yes:hover {
-    background: var(--pink-dark);
-    box-shadow: 0 6px 20px rgba(201,78,138,0.4);
-    transform: translateY(-2px);
-  }
-
-  .btn-no {
-    background: white;
-    color: var(--text-muted);
-    border: 2px solid rgba(0,0,0,0.1);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-
-  .btn-no:hover {
-    background: #f5f5f5;
-    transform: translateY(-2px);
-  }
-
-  /* EMAIL SECTION */
-  .email-row {
-    display: flex;
-    gap: 12px;
-  }
-
-  .email-row input {
-    flex: 1;
-  }
-
-  .btn-email {
-    background: var(--teal);
-    color: white;
-    box-shadow: 0 4px 16px rgba(62,207,207,0.3);
-    white-space: nowrap;
-    flex-shrink: 0;
-    padding: 12px 20px;
-    border-radius: var(--radius);
-    border: none;
-    font-family: 'Nunito', sans-serif;
-    font-size: 14px;
-    font-weight: 900;
-    cursor: pointer;
-    transition: transform 0.15s, background 0.15s;
-  }
-
-  .btn-email:hover {
-    background: #2aafaf;
-    transform: translateY(-2px);
-  }
-
-  @media (max-width: 520px) {
-    .email-row {
-      flex-direction: column;
+  if (params.going === 'Yes') {
+    goingCell.setBackground('#d4edda').setFontColor('#155724');
+    // Send immediate confirmation email if email provided
+    const email = (params.email || '').trim();
+    if (email && email.includes('@')) {
+      sendEmailTemplate(email, params.names || 'Friend', 'confirmation');
     }
+  } else {
+    goingCell.setBackground('#f8d7da').setFontColor('#721c24');
+  }
 
-    .btn-email {
-      white-space: normal;
-      width: 100%;
+  return { success: true };
+}
+
+// ============================================================
+// STANDALONE EMAIL REMINDER
+// ============================================================
+function handleEmail(toAddress) {
+  if (!toAddress || !toAddress.includes('@')) {
+    return { success: false, error: 'Invalid email' };
+  }
+  sendEmailTemplate(toAddress, 'Friend', 'standalone');
+  return { success: true };
+}
+
+// ============================================================
+// SCHEDULED: 1 WEEK OUT - set trigger for June 21 at 8 AM
+// ============================================================
+function sendWeekReminder() {
+  sendReminderToAllYes('week');
+}
+
+// ============================================================
+// SCHEDULED: 1 DAY OUT - set trigger for June 27 at 8 AM
+// ============================================================
+function sendDayReminder() {
+  sendReminderToAllYes('day');
+}
+
+// ============================================================
+// LOOP SHEET AND EMAIL ALL YES RSVPs
+// ============================================================
+function sendReminderToAllYes(timing) {
+  const ss    = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return;
+
+  // Find column positions by header
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const col = {};
+  headers.forEach(function(h, i) { col[h.toString().trim()] = i; }); // 0-indexed for array access
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+
+  data.forEach(function(row) {
+    const name  = row[col['Person/People']   || 0];
+    const going = row[col['Going/Not Going'] || 1];
+    const email = (row[col['Email']          || 4] || '').toString().trim();
+
+    if (going === 'Yes' && email && email.includes('@')) {
+      try {
+        sendEmailTemplate(email, name, timing);
+        Utilities.sleep(500);
+      } catch(err) {
+        Logger.log('Failed sending to ' + email + ': ' + err.message);
+      }
     }
-  }
-
-  /* CALENDAR BUTTONS */
-  .calendar-links {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-    justify-content: center;
-  }
-
-  .btn-cal {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-family: 'Nunito', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.15s, opacity 0.15s;
-  }
-
-  .btn-cal:hover {
-    transform: translateY(-1px);
-    opacity: 0.9;
-  }
-
-  .btn-gcal {
-    background: #4285f4;
-    color: white;
-  }
-
-  .btn-ical {
-    background: #555;
-    color: white;
-  }
-
-  .btn-outlook {
-    background: #0078d4;
-    color: white;
-  }
-
-  /* STATUS MESSAGE */
-  .status-msg {
-    display: none;
-    padding: 14px 20px;
-    border-radius: var(--radius);
-    font-weight: 700;
-    font-size: 15px;
-    text-align: center;
-    margin-top: 8px;
-  }
-
-  .status-msg.success {
-    background: #d4f5e2;
-    color: #1a6b3a;
-    border: 1.5px solid #6fd0a0;
-  }
-
-  .status-msg.error {
-    background: #fde8e8;
-    color: #9b1c1c;
-    border: 1.5px solid #f5a0a0;
-  }
-
-  /* GIFT LINK */
-  .gift-link-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background: var(--purple-light);
-    border-radius: var(--radius);
-    padding: 18px 22px;
-    text-decoration: none;
-    color: #4c1d95;
-    font-weight: 700;
-    transition: transform 0.15s;
-    border: 2px solid rgba(167,139,250,0.3);
-    text-align: center;
-  }
-
-  .gift-link-box:hover {
-    transform: translateY(-2px);
-  }
-
-  .gift-link-box .star-icon {
-    font-size: 24px;
-    flex-shrink: 0;
-    animation: pulse-grow 2s ease-in-out infinite;
-  }
-
-  .gift-link-box .gift-text h3 {
-    font-size: 16px;
-    font-weight: 900;
-    margin-bottom: 2px;
-  }
-
-  .gift-link-box .gift-text p {
-    font-size: 13px;
-    color: #6d28d9;
-    font-weight: 600;
-  }
-
-  /* FOOTER */
-  .footer {
-    text-align: center;
-    padding: 20px;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  /* Loading state */
-  .btn.loading {
-    opacity: 0.7;
-    pointer-events: none;
-  }
-
-  .submitted-banner {
-    display: none;
-    background: linear-gradient(135deg, #ffe0f0, #e0f5ff);
-    border-radius: var(--radius-lg);
-    padding: 32px;
-    text-align: center;
-    border: 2px solid rgba(255,110,180,0.2);
-  }
-
-  .submitted-banner .big-emoji {
-    font-size: 64px;
-    display: block;
-    margin-bottom: 12px;
-  }
-
-  .submitted-banner h2 {
-    font-family: 'Pacifico', cursive;
-    font-size: 28px;
-    color: var(--pink-dark);
-    margin-bottom: 8px;
-  }
-
-  .submitted-banner p {
-    color: var(--text-muted);
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .inline-reminder {
-    display: none;
-    margin-top: 20px;
-    width: 100%;
-  }
-
-  .inline-reminder p {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .inline-reminder .email-row {
-    justify-content: center;
-  }
-
-  .inline-reminder input[type="email"] {
-    padding: 12px 16px;
-    border: 2px solid rgba(255,110,180,0.25);
-    border-radius: var(--radius);
-    font-family: 'Nunito', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    background: var(--bg);
-    outline: none;
-    transition: border-color 0.2s;
-    flex: 1;
-    max-width: 280px;
-  }
-
-  .inline-reminder input[type="email"]:focus {
-    border-color: var(--pink);
-    background: white;
-  }
-
-  /* FALLING CONFETTI */
-  .bubble-field {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .confetti-piece {
-    position: absolute;
-    top: -40px;
-    animation: confetti-fall linear infinite;
-    opacity: 0;
-  }
-
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(0) translateX(0) rotate(0deg);
-      opacity: 0;
-    }
-    8% {
-      opacity: 0.9;
-    }
-    50% {
-      transform: translateY(55vh) translateX(var(--drift, 30px)) rotate(var(--rot, 180deg));
-    }
-    92% {
-      opacity: 0.8;
-    }
-    100% {
-      transform: translateY(115vh) translateX(calc(var(--drift, 30px) * 2)) rotate(var(--rot2, 360deg));
-      opacity: 0;
-    }
-  }
-
-  /* COUNTDOWN */
-  .countdown-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 24px;
-    background: white;
-    border: 2px solid rgba(255,110,180,0.18);
-    border-radius: 999px;
-    padding: 14px 28px;
-    box-shadow: 0 4px 16px rgba(201,78,138,0.08);
-    animation: countdown-pulse 2.5s ease-in-out infinite;
-  }
-
-  .countdown-number {
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--pink-dark);
-    line-height: 1;
-    font-family: 'Nunito', sans-serif;
-  }
-
-  .countdown-text {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-align: left;
-    line-height: 1.2;
-  }
-
-  .countdown-text .small {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--teal);
-  }
-
-  @keyframes countdown-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-  }
-
-  .countdown-done {
-    font-family: 'Pacifico', cursive;
-    font-size: 24px;
-    color: var(--pink-dark);
-    margin-top: 16px;
-  }
-
-  /* SCROLL REVEAL */
-  .reveal {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
-
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* WEATHER CARD */
-  .weather-card {
-    background: linear-gradient(135deg, #e0f7ff 0%, #d0f0f8 100%);
-    border: 2px solid rgba(62,207,207,0.25);
-    border-radius: var(--radius-lg);
-    padding: 24px 28px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 24px rgba(62,207,207,0.1);
-    text-align: center;
-  }
-
-  .weather-header {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #0e7a7a;
-    margin-bottom: 14px;
-  }
-
-  .weather-main {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  .weather-icon-large {
-    font-size: 56px;
-    line-height: 1;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.1));
-  }
-
-  .weather-temp-block {
-    text-align: left;
-  }
-
-  .weather-condition {
-    font-size: 18px;
-    font-weight: 900;
-    color: #0e5f6e;
-    margin-bottom: 2px;
-  }
-
-  .weather-hi-lo {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1a8a8a;
-  }
-
-  .weather-hi-lo span {
-    color: #c94e8a;
-  }
-
-  .weather-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 4px;
-  }
-
-  .weather-stat {
-    background: rgba(255,255,255,0.65);
-    border-radius: 12px;
-    padding: 10px 8px;
-  }
-
-  .weather-stat-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #0e7a7a;
-    margin-bottom: 3px;
-  }
-
-  .weather-stat-value {
-    font-size: 15px;
-    font-weight: 900;
-    color: #0e5f6e;
-  }
-
-  .weather-loading {
-    color: #1a8a8a;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 16px 0;
-  }
-
-  .weather-note {
-    font-size: 11px;
-    color: #3a9a9a;
-    font-weight: 600;
-    margin-top: 12px;
-    opacity: 0.8;
-  }
-
-  @media (max-width: 520px) {
-    .weather-stats {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .weather-stat-value {
-      font-size: 13px;
-    }
-  }
-</style>
-</head>
-<body>
-
-<div class="bubble-field" id="bubble-field"></div>
-
-<div class="container">
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-badge">You're Invited!</div>
-    <h1>
-      Lillian's 9th Birthday
-      <span>Pool Party!</span>
-    </h1>
-    <p class="hero-sub">Sunday, June 28th, 2026 &nbsp;|&nbsp; Wall, NJ</p>
-
-    <div id="countdown-container">
-      <div class="countdown-wrap" id="countdown-wrap">
-        <span class="countdown-number" id="cd-days">--</span>
-        <span class="countdown-text">
-          <span class="small">Get Ready!</span>
-          The party is in <span id="cd-days-word">--</span> days!
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- PARTY DETAILS -->
-  <div class="card reveal">
-    <div class="card-title"><span class="emoji">🎉</span> Party Details</div>
-    <div class="details-grid" style="text-align: center;">
-      <div class="detail-item">
-        <div class="detail-label">Date</div>
-        <div class="detail-value">Sunday, June 28th, 2026</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Time</div>
-        <div class="detail-value">11:00 AM to 7:00 PM</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Location</div>
-        <div class="detail-value">
-          <a href="https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ+07753" target="_blank" rel="noopener">
-            📍 1500 Heritage Court<br>Wall, NJ 07753
-          </a>
-        </div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Vibe</div>
-        <div class="detail-value">☀️ Pool Party! Bring your swimsuit and a towel!</div>
-      </div>
-    </div>
-
-    <div class="highlight-box">
-      <svg class="truck-img" viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
-        <!-- cone on top centered over blue body panel -->
-        <polygon points="125,8 145,8 135,32" fill="#f5c5a0" stroke="#e8a070" stroke-width="1"/>
-        <line x1="128" y1="14" x2="142" y2="14" stroke="#e8a070" stroke-width="0.8"/>
-        <line x1="126" y1="20" x2="144" y2="20" stroke="#e8a070" stroke-width="0.8"/>
-        <line x1="125" y1="26" x2="145" y2="26" stroke="#e8a070" stroke-width="0.8"/>
-        <!-- ice cream scoops -->
-        <ellipse cx="135" cy="30" rx="12" ry="12" fill="#ffb3d1"/>
-        <ellipse cx="135" cy="21" rx="10" ry="10" fill="#ffe0a0"/>
-        <ellipse cx="135" cy="13" rx="8" ry="8" fill="#b8f0b8"/>
-        <!-- sprinkles -->
-        <rect x="131" y="10" width="4" height="2" rx="1" fill="#ff6eb4" transform="rotate(30 133 11)"/>
-        <rect x="137" y="13" width="4" height="2" rx="1" fill="#a78bfa" transform="rotate(-20 139 14)"/>
-        <rect x="130" y="15" width="4" height="2" rx="1" fill="#3ecfcf" transform="rotate(10 132 16)"/>
-        <!-- truck main body sky blue -->
-        <rect x="10" y="42" width="200" height="68" rx="8" fill="#5bc8e8"/>
-        <!-- cab -->
-        <rect x="195" y="56" width="65" height="54" rx="6" fill="#5bc8e8"/>
-        <!-- windshield -->
-        <rect x="204" y="62" width="44" height="28" rx="4" fill="#d0f0ff" stroke="#4ab8d8" stroke-width="1"/>
-        <!-- serving window (left side of body) -->
-        <rect x="18" y="50" width="62" height="38" rx="5" fill="#fff8e0" stroke="#e8b800" stroke-width="2"/>
-        <!-- window shelf -->
-        <rect x="14" y="86" width="70" height="5" rx="2" fill="#e8b800"/>
-        <!-- text on blue panel (right of window, left of cab) -->
-        <text x="140" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="13" fill="#1a1a1a">BEST DAY</text>
-        <text x="140" y="89" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="13" fill="#1a1a1a">EVER!</text>
-        <!-- wheels -->
-        <circle cx="45" cy="112" r="14" fill="#333"/>
-        <circle cx="45" cy="112" r="8" fill="#888"/>
-        <circle cx="45" cy="112" r="3" fill="#ccc"/>
-        <circle cx="175" cy="112" r="14" fill="#333"/>
-        <circle cx="175" cy="112" r="8" fill="#888"/>
-        <circle cx="175" cy="112" r="3" fill="#ccc"/>
-        <!-- bumper -->
-        <rect x="8" y="100" width="18" height="8" rx="3" fill="#3aa8c8"/>
-
-      </svg>
-      <h3>Best Day Ever Ice Cream Truck!</h3>
-      <p>Rolling up around 1:30 PM. Don't miss it!</p>
-      <a href="https://g.page/r/CdVhE-L0esV6EBE/review" target="_blank" rel="noopener" class="review-btn">
-        &#11088; Leave Best Day Ever a Google Review
-      </a>
-    </div>
-  </div>
-
-  <!-- WEATHER -->
-  <div class="weather-card reveal" id="weather-card">
-    <div class="weather-header">Party Day Forecast &mdash; Wall, NJ &mdash; June 28th, 2026</div>
-    <div id="weather-content">
-      <div class="weather-loading">Fetching the forecast...</div>
-    </div>
-  </div>
-
-  <!-- GIFT WISHLIST -->
-  <div class="card reveal">
-    <div class="card-title"><span class="emoji pulse">🎁</span> Lillian's Wish List</div>
-    <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 16px; font-weight: 600; text-align: center;">Your presence is the best present, but if you'd like gift ideas, Lillian has a list!</p>
-    <a href="https://spengeman.com/gifts_lillian" target="_blank" rel="noopener" class="gift-link-box">
-      <span class="star-icon">🌟</span>
-      <div class="gift-text">
-        <h3>View Lillian's Wish List</h3>
-        <p>spengeman.com/gifts_lillian →</p>
-      </div>
-      <span class="star-icon">🌟</span>
-    </a>
-  </div>
-
-  <!-- RSVP -->
-  <div class="card reveal" id="rsvp-card">
-    <div class="card-title"><span class="emoji bounce">✉️</span> RSVP</div>
-
-    <div id="rsvp-form-wrap">
-      <div class="rsvp-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Your Name(s)</label>
-            <textarea id="names" placeholder="e.g. Sarah, Tom & the kids" rows="2"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Number of Guests</label>
-            <select id="guest-count">
-              <option value="">How many coming?</option>
-              <option value="1">1 person</option>
-              <option value="2">2 people</option>
-              <option value="3">3 people</option>
-              <option value="4">4 people</option>
-              <option value="5">5 people</option>
-              <option value="6">6 people</option>
-              <option value="7">7 people</option>
-              <option value="8">8 people</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Email Address <span style="color:var(--pink-dark);">*</span></label>
-          <input type="email" id="rsvp-email" placeholder="you@example.com" style="width:100%;" />
-          <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-weight:600;">We will send you a confirmation and reminders as the party gets closer!</div>
-        </div>
-
-        <div id="status-rsvp" class="status-msg"></div>
-
-        <div class="btn-group">
-          <button class="btn btn-yes" onclick="submitRsvp('yes')">
-            🎉 We can make it!
-          </button>
-          <button class="btn btn-no" onclick="submitRsvp('no')">
-            😢 Sorry, we can't go
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="submitted-banner" id="submitted-banner">
-      <span class="big-emoji" id="submitted-emoji">🎉</span>
-      <h2 id="submitted-title">Yay! See you there!</h2>
-      <p id="submitted-msg">Thanks for letting us know. Lillian can't wait to celebrate with you!</p>
-
-    </div>
-  </div>
-
-  <!-- SEND REMINDER -->
-  <div class="card reveal">
-    <div class="card-title"><span class="emoji spin">📧</span> Send Yourself a Reminder</div>
-    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-weight: 600;">Want the party details emailed to you? Enter your address and we'll send it over!</p>
-
-    <div class="form-group" style="margin-bottom: 12px;">
-      <label>Your Email Address</label>
-      <div class="email-row">
-        <input type="email" id="reminder-email" placeholder="you@example.com" />
-        <button class="btn-email" onclick="sendReminder()">📨 Send Me Details</button>
-      </div>
-    </div>
-    <div id="status-email" class="status-msg"></div>
-
-    <div class="calendar-links">
-      <a class="btn-cal btn-gcal" id="gcal-link" href="#" target="_blank" rel="noopener">📅 Add to Google Calendar</a>
-      <a class="btn-cal btn-ical" id="ical-download" href="#" download="lillian_birthday_party.ics">🍎 Download .ics (Apple / Outlook)</a>
-    </div>
-  </div>
-
-  <div class="footer">
-    Made with 💕 for Lillian's 9th Birthday · June 28, 2026
-  </div>
-
-</div>
-
-<script>
-  // ============================================================
-  // CONFIGURATION: paste your deployed Apps Script URL here
-  // ============================================================
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsLtxX79935UYJ0BJPZIdpg2CMV9oMX_eTnmt1febkJEGVifjia4rlsyRovkYwBClX/exec';
-  // ============================================================
-
-  // Build Google Calendar link
-  const gcalBase = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
-  const gcalParams = new URLSearchParams({
-    text: "Lillian's 9th Birthday Pool Party! 🎉",
-    dates: '20260628T150000Z/20260629T000000Z',
-    details: "🏊 Pool Party!\n\n📍 1500 Heritage Court, Wall, NJ 07753\n\n🕚 11:00 AM to 7:00 PM\n\n🍦 Ice Cream Truck at 1:30-2 PM!\n\n🎁 Wish list: https://spengeman.com/gifts_lillian\n\n🗺️ Map: https://maps.google.com/?q=1500+Heritage+Court+Wall+NJ+07753",
-    location: '1500 Heritage Court, Wall, NJ 07753',
-    sf: 'true',
-    output: 'xml'
   });
-  document.getElementById('gcal-link').href = gcalBase + '&' + gcalParams.toString();
+}
 
-  // Build .ics content
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//LillianBirthday//EN',
-    'BEGIN:VEVENT',
-    'DTSTART:20260628T110000',
-    'DTEND:20260628T190000',
-    'SUMMARY:Lillian\'s 9th Birthday Pool Party!',
-    'DESCRIPTION:Pool Party! Ice Cream Truck at 1:30-2PM.\\nWish list: https://spengeman.com/gifts_lillian',
-    'LOCATION:1500 Heritage Court\\, Wall\\, NJ 07753',
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
-  const icsBlob = new Blob([icsContent], { type: 'text/calendar' });
-  document.getElementById('ical-download').href = URL.createObjectURL(icsBlob);
+// ============================================================
+// EMAIL TEMPLATE ENGINE
+// timing: 'confirmation' | 'week' | 'day' | 'standalone'
+// ============================================================
+function sendEmailTemplate(toAddress, recipientName, timing) {
+  const firstName = recipientName.split(/[,&]/)[0].trim();
 
-  function showStatus(id, msg, type) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.className = 'status-msg ' + type;
-    el.style.display = 'block';
-    setTimeout(() => { el.style.display = 'none'; }, 6000);
+  let subject, headerBg, headerLine1, headerLine2, bodyIntro, urgencyHtml;
+
+  if (timing === 'confirmation') {
+    subject     = "You're in! Lillian's Birthday Party - June 28th";
+    headerBg    = '#ff6eb4';
+    headerLine1 = "You're on the list!";
+    headerLine2 = "We can't wait to celebrate with you.";
+    bodyIntro   = 'Hi ' + firstName + '! Your RSVP is confirmed and we are so excited to see you at Lillian\'s 9th birthday party. Here are all the details you need:';
+    urgencyHtml = '';
+  } else if (timing === 'week') {
+    subject     = "One week until Lillian's Birthday Pool Party!";
+    headerBg    = '#3ecfcf';
+    headerLine1 = "One Week To Go!";
+    headerLine2 = "The countdown is on!";
+    bodyIntro   = 'Hi ' + firstName + '! Just a friendly reminder that Lillian\'s 9th birthday pool party is ONE WEEK from today. We are getting so excited and cannot wait to see you there. Here are the details one more time:';
+    urgencyHtml =
+      '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">' +
+        '<tr><td style="background:#e0f5ff;border:2px solid #3ecfcf;border-radius:10px;padding:14px 18px;text-align:center;">' +
+          '<div style="font-size:15px;font-weight:bold;color:#0e5f6e;">Only 7 days away! Time to dig out that swimsuit and towel.</div>' +
+        '</td></tr>' +
+      '</table>';
+  } else if (timing === 'day') {
+    subject     = "TOMORROW! Lillian's Birthday Pool Party!";
+    headerBg    = '#a78bfa';
+    headerLine1 = "It's Almost Party Time!";
+    headerLine2 = "See you tomorrow!";
+    bodyIntro   = 'Hi ' + firstName + '! The big day is TOMORROW and we are absolutely buzzing with excitement! Lillian cannot wait to celebrate with you. Here is everything you need for tomorrow:';
+    urgencyHtml =
+      '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">' +
+        '<tr><td style="background:#ede9fe;border:2px solid #a78bfa;border-radius:10px;padding:14px 18px;text-align:center;">' +
+          '<div style="font-size:15px;font-weight:bold;color:#4c1d95;">Tomorrow, June 28th at 11 AM! Don\'t forget your swimsuit and a towel!</div>' +
+        '</td></tr>' +
+      '</table>';
+  } else {
+    subject     = "Party Details - Lillian's 9th Birthday Pool Party";
+    headerBg    = '#ff6eb4';
+    headerLine1 = "You're Invited!";
+    headerLine2 = "Lillian's 9th Birthday Pool Party";
+    bodyIntro   = 'Here are all the details for Lillian\'s 9th birthday pool party:';
+    urgencyHtml = '';
   }
 
-  function submitRsvp(answer) {
-    const names = document.getElementById('names').value.trim();
-    const count = document.getElementById('guest-count').value;
-    const email = document.getElementById('rsvp-email').value.trim();
+  const htmlBody =
+    '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+    '<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:20px 0;">' +
+      '<tr><td align="center">' +
+      '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #f0c0d8;">' +
 
-    if (!names) {
-      showStatus('status-rsvp', '👋 Please enter your name(s) first!', 'error');
-      return;
-    }
+        '<tr><td style="background:' + headerBg + ';padding:36px 32px;text-align:center;">' +
+          '<h1 style="color:#ffffff;font-size:30px;margin:0 0 6px;font-family:Georgia,serif;">' + headerLine1 + '</h1>' +
+          '<h2 style="color:rgba(255,255,255,0.88);font-size:18px;margin:0;font-weight:normal;font-family:Georgia,serif;">' + headerLine2 + '</h2>' +
+        '</td></tr>' +
 
-    // Email is required when coming
-    if (answer === 'yes' && (!email || !email.includes('@'))) {
-      showStatus('status-rsvp', '📧 Please enter a valid email so we can send you reminders!', 'error');
-      return;
-    }
+        '<tr><td style="padding:28px 32px 0;">' +
+          '<p style="font-size:15px;color:#2d1a2e;line-height:1.7;margin-bottom:20px;">' + bodyIntro + '</p>' +
+          urgencyHtml +
 
-    const going = answer === 'yes' ? 'Yes' : 'No';
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">' +
+            '<tr><td style="background:#fff0f8;border-radius:10px;padding:14px 18px;">' +
+              '<div style="font-size:11px;font-weight:bold;color:#c94e8a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Date</div>' +
+              '<div style="font-size:16px;color:#2d1a2e;font-weight:bold;">' + PARTY_DATE + '</div>' +
+            '</td></tr>' +
+          '</table>' +
 
-    const params = new URLSearchParams({
-      action: 'rsvp',
-      names: names,
-      count: count || '?',
-      going: going,
-      email: email
-    });
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">' +
+            '<tr><td style="background:#e0f5ff;border-radius:10px;padding:14px 18px;">' +
+              '<div style="font-size:11px;font-weight:bold;color:#0e7a7a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Time</div>' +
+              '<div style="font-size:16px;color:#2d1a2e;font-weight:bold;">' + PARTY_TIME + '</div>' +
+            '</td></tr>' +
+          '</table>' +
 
-    fetch(APPS_SCRIPT_URL + '?' + params.toString())
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showConfirmation(answer, names);
-        } else {
-          showStatus('status-rsvp', '⚠️ Something went wrong. Please try again!', 'error');
-        }
-      })
-      .catch(() => {
-        showStatus('status-rsvp', '⚠️ Connection error. Please try again!', 'error');
-      });
-  }
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">' +
+            '<tr><td style="background:#fff5e0;border-radius:10px;padding:14px 18px;">' +
+              '<div style="font-size:11px;font-weight:bold;color:#7a5000;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Location</div>' +
+              '<div style="font-size:16px;color:#2d1a2e;font-weight:bold;margin-bottom:4px;">' + PARTY_ADDR + '</div>' +
+              '<a href="' + MAP_LINK + '" style="color:#0e7a7a;font-size:14px;font-weight:bold;text-decoration:none;">Open in Google Maps &rarr;</a>' +
+            '</td></tr>' +
+          '</table>' +
 
-  function showConfirmation(answer, names) {
-    document.getElementById('rsvp-form-wrap').style.display = 'none';
-    const banner = document.getElementById('submitted-banner');
-    banner.style.display = 'block';
-    if (answer === 'yes') {
-      document.getElementById('submitted-emoji').textContent = '🎉';
-      document.getElementById('submitted-title').textContent = 'Yay! See you there!';
-      document.getElementById('submitted-msg').textContent = 'Thanks ' + (names.split(/[,&]/)[0].trim()) + '! Lillian can\'t wait to celebrate with you! Check your inbox for a confirmation email.';
-    } else {
-      document.getElementById('submitted-emoji').textContent = '💕';
-      document.getElementById('submitted-title').textContent = 'We\'ll miss you!';
-      document.getElementById('submitted-msg').textContent = 'Thanks for letting us know. We\'ll miss having you there!';
-    }
-  }
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;">' +
+            '<tr><td style="background:#f0fff4;border-radius:10px;padding:14px 18px;">' +
+              '<div style="font-size:11px;font-weight:bold;color:#1a6b3a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">What to Bring</div>' +
+              '<div style="font-size:15px;color:#2d1a2e;font-weight:bold;">Swimsuit, towel, and your best pool party energy!</div>' +
+            '</td></tr>' +
+          '</table>' +
 
-  function sendReminder() {
-    const email = document.getElementById('reminder-email').value.trim();
-    if (!email || !email.includes('@')) {
-      showStatus('status-email', '📧 Please enter a valid email address!', 'error');
-      return;
-    }
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">' +
+            '<tr><td style="background:#fffbe0;border:2px dashed #e8b800;border-radius:12px;padding:16px 20px;text-align:center;">' +
+              '<div style="font-size:13px;font-weight:900;color:#7a5000;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Best Day Ever Ice Cream Truck!</div>' +
+              '<div style="font-size:14px;color:#a07020;">Rolling up around 1:30 PM. Don\'t miss it!</div>' +
+            '</td></tr>' +
+          '</table>' +
 
-    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-      showStatus('status-email', '✅ (Demo mode) In production, a reminder would be sent to ' + email, 'success');
-      return;
-    }
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">' +
+            '<tr><td style="text-align:center;">' +
+              '<div style="font-size:13px;font-weight:bold;color:#7a5c7e;margin-bottom:10px;">Add to your calendar:</div>' +
+              '<a href="' + GCAL_LINK + '" style="display:inline-block;background:#4285f4;color:#ffffff;padding:12px 28px;border-radius:999px;text-decoration:none;font-size:14px;font-weight:bold;">Add to Google Calendar</a>' +
+            '</td></tr>' +
+          '</table>' +
 
-    const params = new URLSearchParams({ action: 'email', to: email });
-    fetch(APPS_SCRIPT_URL + '?' + params.toString())
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showStatus('status-email', '✅ Reminder sent to ' + email + '!', 'success');
-          document.getElementById('reminder-email').value = '';
-        } else {
-          showStatus('status-email', '⚠️ Could not send. Please try again!', 'error');
-        }
-      })
-      .catch(() => {
-        showStatus('status-email', '⚠️ Connection error. Please try again!', 'error');
-      });
-  }
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">' +
+            '<tr><td style="background:#ede9fe;border-radius:12px;padding:16px 20px;text-align:center;">' +
+              '<div style="font-size:15px;font-weight:bold;color:#4c1d95;margin-bottom:6px;">Gift ideas? Lillian has a wish list!</div>' +
+              '<a href="' + WISH_LIST + '" style="color:#6d28d9;font-size:14px;font-weight:bold;text-decoration:none;">' + WISH_LIST + ' &rarr;</a>' +
+            '</td></tr>' +
+          '</table>' +
 
-  // ============================================================
-  // FALLING CONFETTI
-  // ============================================================
-  const CONFETTI_COLORS = ['#ff6eb4', '#3ecfcf', '#ffde59', '#a78bfa', '#ff9ebc', '#7adfdf'];
+          '<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">' +
+            '<tr><td style="border-top:1px solid #f5c0dc;padding-top:20px;text-align:center;">' +
+              '<div style="font-size:13px;color:#7a5c7e;line-height:1.8;">' +
+                'Questions? Reach Dan at <a href="mailto:danspengeman@gmail.com" style="color:#c94e8a;">danspengeman@gmail.com</a><br>' +
+                'Made with love for Lillian\'s 9th Birthday' +
+              '</div>' +
+            '</td></tr>' +
+          '</table>' +
 
-  function createConfetti() {
-    const field = document.getElementById('bubble-field');
-    const count = 40;
-    for (let i = 0; i < count; i++) {
-      const piece = document.createElement('div');
-      piece.className = 'confetti-piece';
-      const width = Math.random() * 6 + 6;  // 6-12px
-      const height = Math.random() * 10 + 10; // 10-20px
-      const left = Math.random() * 100; // %
-      const duration = Math.random() * 6 + 7; // 7s - 13s
-      const delay = Math.random() * -13; // stagger start
-      const drift = (Math.random() * 160 - 80) + 'px';
-      const rot = (Math.random() * 360) + 'deg';
-      const rot2 = (Math.random() * 720 + 360) + 'deg';
-      const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-      const shape = Math.random() > 0.5 ? '50%' : '2px';
+        '</td></tr>' +
+      '</table>' +
+      '</td></tr>' +
+    '</table>' +
+    '</body></html>';
 
-      piece.style.width = width + 'px';
-      piece.style.height = height + 'px';
-      piece.style.left = left + '%';
-      piece.style.background = color;
-      piece.style.borderRadius = shape;
-      piece.style.animationDuration = duration + 's';
-      piece.style.animationDelay = delay + 's';
-      piece.style.setProperty('--drift', drift);
-      piece.style.setProperty('--rot', rot);
-      piece.style.setProperty('--rot2', rot2);
-      field.appendChild(piece);
-    }
-  }
-  createConfetti();
+  const plainBody =
+    subject + '\n=================================================\n\n' +
+    bodyIntro + '\n\n' +
+    'Date: ' + PARTY_DATE + '\n' +
+    'Time: ' + PARTY_TIME + '\n' +
+    'Location: ' + PARTY_ADDR + '\n' +
+    'Map: ' + MAP_LINK + '\n\n' +
+    'Bring: Swimsuit and a towel!\n\n' +
+    'Best Day Ever Ice Cream Truck rolls up around 1:30 PM!\n\n' +
+    'Add to Google Calendar:\n' + GCAL_LINK + '\n\n' +
+    'Gift ideas for Lillian:\n' + WISH_LIST + '\n\n' +
+    'Questions? danspengeman@gmail.com';
 
-  // ============================================================
-  // COUNTDOWN TIMER
-  // ============================================================
-  function startCountdown() {
-    const partyDate = new Date('2026-06-28T11:00:00-04:00').getTime();
-    const dayAfterParty = new Date('2026-06-29T00:00:00-04:00').getTime();
-    let timer = null;
-
-    function update() {
-      const now = new Date();
-      const nowMs = now.getTime();
-
-      // After June 28th is over, hide the countdown entirely
-      if (nowMs >= dayAfterParty) {
-        document.getElementById('countdown-container').style.display = 'none';
-        if (timer) clearInterval(timer);
-        return;
-      }
-
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const partyDay = new Date('2026-06-28T00:00:00-04:00').getTime();
-      const diffDays = Math.round((partyDay - startOfToday) / (1000 * 60 * 60 * 24));
-
-      // On party day itself, show the celebration message instead of "0 days"
-      if (diffDays <= 0) {
-        document.getElementById('countdown-wrap').style.display = 'none';
-        const container = document.getElementById('countdown-container');
-        if (!document.getElementById('countdown-done-msg')) {
-          const msg = document.createElement('div');
-          msg.id = 'countdown-done-msg';
-          msg.className = 'countdown-done';
-          msg.textContent = "The party is today!";
-          container.appendChild(msg);
-        }
-        if (timer) clearInterval(timer);
-        return;
-      }
-
-      document.getElementById('cd-days').textContent = diffDays;
-      document.getElementById('cd-days-word').textContent = diffDays;
-    }
-
-    update();
-    timer = setInterval(update, 1000 * 60);
-  }
-  startCountdown();
-
-  // ============================================================
-  // PARTY DAY WEATHER (Open-Meteo, no API key required)
-  // Wall, NJ: lat 40.1676, lon -74.0549
-  // ============================================================
-  async function fetchPartyWeather() {
-    const url =
-      'https://api.open-meteo.com/v1/forecast' +
-      '?latitude=40.1676&longitude=-74.0549' +
-      '&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,' +
-      'precipitation_probability_max,wind_speed_10m_max,weather_code' +
-      '&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York' +
-      '&start_date=2026-06-28&end_date=2026-06-28';
-
-    function weatherIcon(code) {
-      if (code === 0) return { icon: '☀️', label: 'Clear and Sunny' };
-      if (code <= 2) return { icon: '⛅', label: 'Partly Cloudy' };
-      if (code === 3) return { icon: '☁️', label: 'Overcast' };
-      if (code <= 49) return { icon: '🌫️', label: 'Foggy' };
-      if (code <= 59) return { icon: '🌦️', label: 'Light Drizzle' };
-      if (code <= 69) return { icon: '🌧️', label: 'Rainy' };
-      if (code <= 79) return { icon: '🌨️', label: 'Snowy' };
-      if (code <= 82) return { icon: '🌦️', label: 'Rain Showers' };
-      if (code <= 99) return { icon: '⛈️', label: 'Thunderstorms' };
-      return { icon: '🌤️', label: 'Mixed' };
-    }
-
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      const d = data.daily;
-
-      const hi = Math.round(d.temperature_2m_max[0]);
-      const lo = Math.round(d.temperature_2m_min[0]);
-      const feelsHi = Math.round(d.apparent_temperature_max[0]);
-      const feelsLo = Math.round(d.apparent_temperature_min[0]);
-      const precip = d.precipitation_probability_max[0];
-      const wind = Math.round(d.wind_speed_10m_max[0]);
-      const code = d.weather_code[0];
-      const { icon, label } = weatherIcon(code);
-
-      document.getElementById('weather-content').innerHTML =
-        '<div class="weather-main">' +
-          '<div class="weather-icon-large">' + icon + '</div>' +
-          '<div class="weather-temp-block">' +
-            '<div class="weather-condition">' + label + '</div>' +
-            '<div class="weather-hi-lo"><span>High ' + hi + '&deg;F</span> &nbsp;/&nbsp; Low ' + lo + '&deg;F</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="weather-stats">' +
-          '<div class="weather-stat">' +
-            '<div class="weather-stat-label">Feels Like</div>' +
-            '<div class="weather-stat-value">' + feelsHi + '&deg; / ' + feelsLo + '&deg;</div>' +
-          '</div>' +
-          '<div class="weather-stat">' +
-            '<div class="weather-stat-label">Rain Chance</div>' +
-            '<div class="weather-stat-value">' + precip + '%</div>' +
-          '</div>' +
-          '<div class="weather-stat">' +
-            '<div class="weather-stat-label">Wind</div>' +
-            '<div class="weather-stat-value">' + wind + ' mph</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="weather-note">Forecast updates daily as the party date approaches.</div>';
-    } catch (e) {
-      document.getElementById('weather-content').innerHTML =
-        '<div class="weather-loading">Forecast unavailable right now. Check back closer to the party!</div>';
-    }
-  }
-  fetchPartyWeather();
-
-  // ============================================================
-  // SCROLL REVEAL ANIMATIONS
-  // ============================================================
-  function initScrollReveal() {
-    const items = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15 });
-
-    items.forEach(item => observer.observe(item));
-  }
-  initScrollReveal();
-</script>
-
-</body>
-</html>
+  GmailApp.sendEmail(toAddress, subject, plainBody, {
+    htmlBody: htmlBody,
+    from:     FROM_EMAIL,
+    name:     SENDER_NAME
+  });
+}
