@@ -954,6 +954,12 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label>Email Address <span style="color:var(--pink-dark);">*</span></label>
+          <input type="email" id="rsvp-email" placeholder="you@example.com" style="width:100%;" />
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-weight:600;">We will send you a confirmation and reminders as the party gets closer!</div>
+        </div>
+
         <div id="status-rsvp" class="status-msg"></div>
 
         <div class="btn-group">
@@ -971,14 +977,7 @@
       <span class="big-emoji" id="submitted-emoji">🎉</span>
       <h2 id="submitted-title">Yay! See you there!</h2>
       <p id="submitted-msg">Thanks for letting us know. Lillian can't wait to celebrate with you!</p>
-      <div class="inline-reminder" id="inline-reminder">
-        <p>📧 Want a reminder? We'll email you the party details!</p>
-        <div class="email-row">
-          <input type="email" id="inline-reminder-email" placeholder="you@example.com" />
-          <button class="btn-email" onclick="sendReminderInline()">📨 Send Me Details</button>
-        </div>
-        <div id="status-inline-email" class="status-msg" style="margin-top:8px;"></div>
-      </div>
+
     </div>
   </div>
 
@@ -1055,9 +1054,16 @@
   function submitRsvp(answer) {
     const names = document.getElementById('names').value.trim();
     const count = document.getElementById('guest-count').value;
+    const email = document.getElementById('rsvp-email').value.trim();
 
     if (!names) {
       showStatus('status-rsvp', '👋 Please enter your name(s) first!', 'error');
+      return;
+    }
+
+    // Email is required when coming
+    if (answer === 'yes' && (!email || !email.includes('@'))) {
+      showStatus('status-rsvp', '📧 Please enter a valid email so we can send you reminders!', 'error');
       return;
     }
 
@@ -1067,14 +1073,9 @@
       action: 'rsvp',
       names: names,
       count: count || '?',
-      going: going
+      going: going,
+      email: email
     });
-
-    if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-      // Demo mode: show confirmation without real submission
-      showConfirmation(answer, names);
-      return;
-    }
 
     fetch(APPS_SCRIPT_URL + '?' + params.toString())
       .then(r => r.json())
@@ -1097,36 +1098,12 @@
     if (answer === 'yes') {
       document.getElementById('submitted-emoji').textContent = '🎉';
       document.getElementById('submitted-title').textContent = 'Yay! See you there!';
-      document.getElementById('submitted-msg').textContent = 'Thanks ' + (names.split(/[,&]/)[0].trim()) + '! Lillian can\'t wait to celebrate with you!';
-      document.getElementById('inline-reminder').style.display = 'block';
+      document.getElementById('submitted-msg').textContent = 'Thanks ' + (names.split(/[,&]/)[0].trim()) + '! Lillian can\'t wait to celebrate with you! Check your inbox for a confirmation email.';
     } else {
       document.getElementById('submitted-emoji').textContent = '💕';
       document.getElementById('submitted-title').textContent = 'We\'ll miss you!';
       document.getElementById('submitted-msg').textContent = 'Thanks for letting us know. We\'ll miss having you there!';
-      document.getElementById('inline-reminder').style.display = 'none';
     }
-  }
-
-  function sendReminderInline() {
-    const email = document.getElementById('inline-reminder-email').value.trim();
-    if (!email || !email.includes('@')) {
-      showStatus('status-inline-email', '📧 Please enter a valid email address!', 'error');
-      return;
-    }
-    const params = new URLSearchParams({ action: 'email', to: email });
-    fetch(APPS_SCRIPT_URL + '?' + params.toString())
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showStatus('status-inline-email', '✅ Reminder sent to ' + email + '!', 'success');
-          document.getElementById('inline-reminder-email').value = '';
-        } else {
-          showStatus('status-inline-email', '⚠️ Could not send. Please try again!', 'error');
-        }
-      })
-      .catch(() => {
-        showStatus('status-inline-email', '⚠️ Connection error. Please try again!', 'error');
-      });
   }
 
   function sendReminder() {
